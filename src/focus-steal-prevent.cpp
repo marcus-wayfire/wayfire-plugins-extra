@@ -34,8 +34,7 @@ class wayfire_focus_steal_prevent : public wf::per_output_plugin_instance_t
 
     wf::option_wrapper_t<int> timeout{"focus-steal-prevent/timeout"};
 
-    wf::signal::connection_t<wf::input_event_signal<wlr_keyboard_key_event>> on_key_event =
-        [=] (wf::input_event_signal<wlr_keyboard_key_event> *ev)
+    void reset_timeout()
     {
         if (!focus_view)
         {
@@ -51,6 +50,24 @@ class wayfire_focus_steal_prevent : public wf::per_output_plugin_instance_t
             prevent_focus_steal = false;
             return false; // disconnect
         });
+    }
+
+    wf::signal::connection_t<wf::input_event_signal<wlr_keyboard_key_event>> on_key_event =
+        [=] (wf::input_event_signal<wlr_keyboard_key_event> *ev)
+    {
+        reset_timeout();
+    };
+
+    wf::signal::connection_t<wf::input_event_signal<wlr_pointer_button_event>> on_button_event =
+        [=] (wf::input_event_signal<wlr_pointer_button_event> *ev)
+    {
+        if (ev->event->state == WLR_BUTTON_RELEASED)
+        {
+            return;
+        }
+
+        focus_view = wf::get_core().get_cursor_focus_view();
+        reset_timeout();
     };
 
     wf::signal::connection_t<wf::focus_view_signal> view_focused = [=] (wf::focus_view_signal *ev)
@@ -63,6 +80,11 @@ class wayfire_focus_steal_prevent : public wf::per_output_plugin_instance_t
         if (ev->view != focus_view)
         {
             output->focus_view(focus_view, true);
+
+            if (!ev->view)
+            {
+                return;
+            }
 
             /** Emit the view-hints-changed signal for use with panels */
             wf::view_hints_changed_signal hints_signal;
@@ -78,6 +100,7 @@ class wayfire_focus_steal_prevent : public wf::per_output_plugin_instance_t
     {
         output->connect(&view_focused);
         wf::get_core().connect(&on_key_event);
+        wf::get_core().connect(&on_button_event);
     }
 
     void fini() override
@@ -85,6 +108,7 @@ class wayfire_focus_steal_prevent : public wf::per_output_plugin_instance_t
         timer.disconnect();
         view_focused.disconnect();
         on_key_event.disconnect();
+        on_button_event.disconnect();
     }
 };
 
