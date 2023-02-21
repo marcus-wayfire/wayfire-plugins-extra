@@ -36,11 +36,6 @@ class wayfire_focus_steal_prevent : public wf::per_output_plugin_instance_t
 
     void reset_timeout()
     {
-        if (!focus_view)
-        {
-            focus_view = output->get_active_view();
-        }
-
         prevent_focus_steal = true;
 
         timer.disconnect();
@@ -55,6 +50,8 @@ class wayfire_focus_steal_prevent : public wf::per_output_plugin_instance_t
     wf::signal::connection_t<wf::input_event_signal<wlr_keyboard_key_event>> on_key_event =
         [=] (wf::input_event_signal<wlr_keyboard_key_event> *ev)
     {
+        focus_view = output->get_active_view();
+
         reset_timeout();
     };
 
@@ -79,19 +76,24 @@ class wayfire_focus_steal_prevent : public wf::per_output_plugin_instance_t
 
         if (ev->view != focus_view)
         {
-            output->focus_view(focus_view, true);
+            view_focused.disconnect();
 
-            if (!ev->view)
+            if (focus_view)
             {
-                return;
+                output->focus_view(focus_view, true);
             }
 
-            /** Emit the view-hints-changed signal for use with panels */
-            wf::view_hints_changed_signal hints_signal;
-            hints_signal.view = ev->view;
-            hints_signal.demands_attention = true;
-            ev->view->emit(&hints_signal);
-            wf::get_core().emit(&hints_signal);
+            if (ev->view)
+            {
+                /** Emit the view-hints-changed signal for use with panels */
+                wf::view_hints_changed_signal hints_signal;
+                hints_signal.view = ev->view;
+                hints_signal.demands_attention = true;
+                ev->view->emit(&hints_signal);
+                wf::get_core().emit(&hints_signal);
+            }
+
+            output->connect(&view_focused);
         }
     };
 
