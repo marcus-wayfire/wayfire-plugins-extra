@@ -9,5 +9,10 @@
 			<default>1000</default>
 			<min>0</min>
 		</option>
+		<option name="deny_focus_views" type="string">
+			<_short>Deny focus to these views</_short>
+			<_long>If a view matches when mapped, focus is reset to the last view with focus.</_long>
+			<default>none</default>
+		</option>
 	</plugin>
 </wayfire>

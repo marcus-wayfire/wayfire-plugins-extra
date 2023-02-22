@@ -21,6 +21,7 @@
  */
 
 #include <wayfire/per-output-plugin.hpp>
+#include <wayfire/matcher.hpp>
 
 
 namespace focus_steal_prevent
@@ -28,11 +29,13 @@ namespace focus_steal_prevent
 class wayfire_focus_steal_prevent : public wf::per_output_plugin_instance_t
 {
   private:
-    wayfire_view focus_view  = nullptr;
-    bool prevent_focus_steal = false;
+    wayfire_view focus_view = nullptr;
+    wayfire_view last_focus_view = nullptr;
+    bool prevent_focus_steal     = false;
     wf::wl_timer timer;
 
     wf::option_wrapper_t<int> timeout{"focus-steal-prevent/timeout"};
+    wf::view_matcher_t deny_focus_views{"focus-steal-prevent/deny_focus_views"};
 
     void reset_timeout()
     {
@@ -51,7 +54,6 @@ class wayfire_focus_steal_prevent : public wf::per_output_plugin_instance_t
         [=] (wf::input_event_signal<wlr_keyboard_key_event> *ev)
     {
         focus_view = output->get_active_view();
-
         reset_timeout();
     };
 
@@ -69,6 +71,15 @@ class wayfire_focus_steal_prevent : public wf::per_output_plugin_instance_t
 
     wf::signal::connection_t<wf::focus_view_signal> view_focused = [=] (wf::focus_view_signal *ev)
     {
+        if (ev->view && deny_focus_views.matches(ev->view))
+        {
+            view_focused.disconnect();
+            output->focus_view(last_focus_view, true);
+            output->connect(&view_focused);
+        }
+
+        last_focus_view = ev->view;
+
         if (!prevent_focus_steal)
         {
             return;
