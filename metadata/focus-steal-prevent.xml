@@ -5,7 +5,7 @@
 		<category>Window Management</category>
 		<option name="timeout" type="int">
 			<_short>The timeout (in ms) to prevent focus stealing</_short>
-			<_long>A timer will be reset to the timeout (in ms) on every keystroke and pointer click. If the timer is active when another window would normally gain focus, the focus is reset to the window that is accepting input.</_long>
+			<_long>A timer will be reset to the timeout (in ms) on every keystroke. If the timer is active when another window would normally gain focus, the focus is reset to the window that is accepting input.</_long>
 			<default>1000</default>
 			<min>0</min>
 		</option>

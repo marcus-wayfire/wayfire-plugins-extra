@@ -32,6 +32,7 @@ class wayfire_focus_steal_prevent : public wf::per_output_plugin_instance_t
     wayfire_view focus_view = nullptr;
     wayfire_view last_focus_view = nullptr;
     bool prevent_focus_steal     = false;
+    bool keyboard_focus = false;
     wf::wl_timer timer;
 
     wf::option_wrapper_t<int> timeout{"focus-steal-prevent/timeout"};
@@ -44,7 +45,8 @@ class wayfire_focus_steal_prevent : public wf::per_output_plugin_instance_t
         timer.disconnect();
         timer.set_timeout(timeout, [=] ()
         {
-            focus_view = nullptr;
+            focus_view     = nullptr;
+            keyboard_focus = false;
             prevent_focus_steal = false;
             return false; // disconnect
         });
@@ -53,14 +55,15 @@ class wayfire_focus_steal_prevent : public wf::per_output_plugin_instance_t
     wf::signal::connection_t<wf::input_event_signal<wlr_keyboard_key_event>> on_key_event =
         [=] (wf::input_event_signal<wlr_keyboard_key_event> *ev)
     {
-        focus_view = output->get_active_view();
+        focus_view     = output->get_active_view();
+        keyboard_focus = true;
         reset_timeout();
     };
 
     wf::signal::connection_t<wf::input_event_signal<wlr_pointer_button_event>> on_button_event =
         [=] (wf::input_event_signal<wlr_pointer_button_event> *ev)
     {
-        if (ev->event->state == WLR_BUTTON_RELEASED)
+        if ((ev->event->state == WLR_BUTTON_RELEASED) || !keyboard_focus)
         {
             return;
         }
