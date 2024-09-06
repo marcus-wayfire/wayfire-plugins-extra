@@ -14,6 +14,11 @@
 			<_long>If a view matches when mapped, focus is reset to the last view with focus.</_long>
 			<default>none</default>
 		</option>
+		<option name="accept_focus_views" type="string">
+			<_short>Accept focus to views matching this criteria</_short>
+			<_long>If a view matches when mapped, focus is granted immediately to this view.</_long>
+			<default>none</default>
+		</option>
 		<option name="cancel_keys" type="string">
 			<_short>Cancel focus stealing prevention on these keys</_short>
 			<_long>Cancel focus stealing prevention when any of these keys are pressed. The string consists of keycode names delimited by | character.</_long>

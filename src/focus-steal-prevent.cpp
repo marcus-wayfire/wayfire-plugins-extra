@@ -26,6 +26,7 @@
 #include <set>
 #include <linux/input-event-codes.h>
 #include <libevdev/libevdev.h>
+#include <wayfire/window-manager.hpp>
 
 
 namespace focus_steal_prevent
@@ -43,6 +44,7 @@ class wayfire_focus_steal_prevent : public wf::per_output_plugin_instance_t
 
     wf::option_wrapper_t<int> timeout{"focus-steal-prevent/timeout"};
     wf::view_matcher_t deny_focus_views{"focus-steal-prevent/deny_focus_views"};
+    wf::view_matcher_t accept_focus_views{"focus-steal-prevent/accept_focus_views"};
     wf::option_wrapper_t<std::string> cancel_keys{"focus-steal-prevent/cancel_keys"};
 
     std::string ltrim(const std::string & s)
@@ -234,7 +236,15 @@ class wayfire_focus_steal_prevent : public wf::per_output_plugin_instance_t
     {
         validate_last_focus_view();
 
-        if (ev->view && deny_focus_views.matches(ev->view))
+        if (ev->view && accept_focus_views.matches(ev->view))
+        {
+            if (!ev->carried_out) {
+                ev->carried_out = true;
+                wf::get_core().default_wm->focus_raise_view( ev->view );
+            }
+        }
+
+        else if (ev->view && deny_focus_views.matches(ev->view))
         {
             ev->carried_out = true;
             if (last_focus_view)
